@@ -224,8 +224,14 @@ class NodeStatsCollector:
     def _get_active_process_list(self):
         process_list = []
         try:
-            for proc in psutil.process_iter(attrs=['name']):
+            for proc in psutil.process_iter(attrs=['name','cmdline']):
                 proc_lower = proc.info["name"].lower()
+
+                # Exclude this process
+                if 'python' in proc_lower and proc.cmdline and \
+                        (('nodestats.py' in proc.cmdline) or ('.\nodestats.py' in proc.cmdline)):
+                    continue
+
                 if (proc_lower in PROCESSES_TO_WATCH) or (proc_lower in self.processes_to_watch):
                     try:
                         process_list.append((proc.info['name'], proc.cpu_percent(interval=1)))
