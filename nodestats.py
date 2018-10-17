@@ -226,10 +226,11 @@ class NodeStatsCollector:
         try:
             for proc in psutil.process_iter(attrs=['name','cmdline']):
                 proc_lower = proc.info["name"].lower()
+                cmdline = proc.info['cmdline']
 
                 # Exclude this process
-                if 'python' in proc_lower and proc.cmdline and \
-                        (('nodestats.py' in proc.cmdline) or ('.\nodestats.py' in proc.cmdline)):
+                if 'python' in proc_lower and cmdline and \
+                        (('nodestats.py' in cmdline) or ('.\nodestats.py' in cmdline)):
                     continue
 
                 if (proc_lower in PROCESSES_TO_WATCH) or (proc_lower in self.processes_to_watch):
@@ -238,7 +239,7 @@ class NodeStatsCollector:
                     except:
                         pass
         except Exception as e:
-            logger.error('Could not retrieve process list: {1}'.format(e))
+            logger.error('Could not retrieve process list: {0}'.format(e))
 
         return process_list
 
@@ -252,7 +253,7 @@ class NodeStatsCollector:
         swap_total, _, swap_avail, _, _, _ = psutil.swap_memory()
 
         # Tuple (proc name, CPU %)
-        process_list = _get_active_process_list()
+        process_list = self._get_active_process_list()
 
         gpu_count = 0
         gpu_percent = None
