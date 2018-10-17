@@ -390,7 +390,7 @@ class NodeStatsCollector:
         while True:
             try:
                 self._collect_stats()
-            except e:
+            except Exception as e:
                 logger.error('Could not collect stats: {}'.format(e))
             time.sleep(self.refresh_interval)
 
