@@ -19,8 +19,10 @@ except:
     pass
 
 VERSION = "0.0.1.1"
-_DEFAULT_STATS_UPDATE_INTERVAL = 15
-PROCESSES_TO_WATCH = ['3dsmax.exe', '3dsmaxcmd.exe', '3dsmaxio.exe', '3dsmaxcmdio.exe', 'Render.exe', 'kick.exe', 'Commandline.exe', 'CINEMA 4D.exe', 'vray.exe', 'maya.exe', 'mayabatch.exe', 'blender.exe']
+_DEFAULT_STATS_UPDATE_INTERVAL = 30
+
+# Default processes to what (lowercase)
+PROCESSES_TO_WATCH = ['3dsmax.exe', '3dsmaxcmd.exe', '3dsmaxio.exe', '3dsmaxcmdio.exe', 'render.exe', 'kick.exe', 'commandline.exe', 'cinema 4d.exe', 'vray.exe', 'maya.exe', 'mayabatch.exe', 'blender.exe']
 
 def setup_logger():
     # logger defines
@@ -168,9 +170,10 @@ class NodeStatsCollector:
     Node Stats Manager class
     """
 
-    def __init__(self, pool_id, node_id, refresh_interval=_DEFAULT_STATS_UPDATE_INTERVAL, app_insights_key=None):
+    def __init__(self, pool_id, node_id, refresh_interval=_DEFAULT_STATS_UPDATE_INTERVAL, app_insights_key=None, processes_to_watch=None):
         self.pool_id = pool_id
         self.node_id = node_id
+        self.processes_to_watch = processes_to_watch
         self.telemetry_client = None
         self.first_collect = True
         self.refresh_interval = refresh_interval
@@ -218,6 +221,21 @@ class NodeStatsCollector:
             logger.error('Could not retrieve user disk stats for {0}: {1}'.format(_USER_DISK, e))
         return disk_usage
 
+    def _get_active_process_list(self):
+        process_list = []
+        try:
+            for proc in psutil.process_iter(attrs=['name']):
+                proc_lower = proc.info["name"].lower()
+                if (proc_lower in PROCESSES_TO_WATCH) or (proc_lower in self.processes_to_watch):
+                    try:
+                        process_list.append((proc.info['name'], proc.cpu_percent(interval=1)))
+                    except:
+                        pass
+        except Exception as e:
+            logger.error('Could not retrieve process list: {1}'.format(e))
+
+        return process_list
+
     def _sample_stats(self):
         # get system-wide counters
         mem = psutil.virtual_memory()
@@ -228,7 +246,7 @@ class NodeStatsCollector:
         swap_total, _, swap_avail, _, _, _ = psutil.swap_memory()
 
         # Tuple (proc name, CPU %)
-        process_list = list(((proc.info['name'], proc.cpu_percent(interval=1)) for proc in psutil.process_iter(attrs=['name']) if proc.info["name"] in PROCESSES_TO_WATCH))
+        process_list = _get_active_process_list()
 
         gpu_count = 0
         gpu_percent = None
@@ -319,7 +337,7 @@ class NodeStatsCollector:
         if stats.process_list:
             for process_name, cpu in stats.process_list:
                 props = {"Process": process_name, "PoolName": self.pool_id, "ComputeNode": self.node_id}
-                client.track_metric("ActiveProcess", cpu, properties=props)
+                client.track_metric("Active process", cpu, properties=props)
 
         if stats.gpu_count > 0:
             for gpu_n in range(0, stats.gpu_count):
@@ -364,7 +382,10 @@ class NodeStatsCollector:
         """
         logger.debug("Start collecting stats for pool=%s node=%s", self.pool_id, self.node_id)
         while True:
-            self._collect_stats()
+            try:
+                self._collect_stats()
+            except e:
+                logger.error('Could not collect stats: {}'.format(e))
             time.sleep(self.refresh_interval)
 
 
@@ -380,6 +401,9 @@ def main():
 
     pool_id = os.environ.get('AZ_BATCH_POOL_ID', '_test-pool-1')
     node_id = os.environ.get('AZ_BATCH_NODE_ID', '_test-node-1')
+    processes_to_watch = []
+    if os.environ.get('AZ_BATCH_PROCS_TO_WATCH', None):
+        processes_to_watch = os.environ.get('AZ_BATCH_PROCS_TO_WATCH').split(',')
 
     # get and set event loop mode
     logger.info('enabling event loop debug mode')
@@ -392,7 +416,7 @@ def main():
         app_insights_key = sys.argv[3]
 
     # create node stats manager
-    collector = NodeStatsCollector(pool_id, node_id, app_insights_key=app_insights_key)
+    collector = NodeStatsCollector(pool_id, node_id, app_insights_key=app_insights_key, processes_to_watch=processes_to_watch)
     collector.init()
     collector.run()
 
