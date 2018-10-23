@@ -1,4 +1,6 @@
-$wd = $env:AZ_BATCH_TASK_WORKING_DIR
+$wd = "$env:AZ_BATCH_TASK_WORKING_DIR\batchinsights"
+mkdir "$wd"
+cd "$wd"
 
 Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 choco install -y python2
@@ -30,3 +32,5 @@ $principal = New-ScheduledTaskPrincipal -UserID 'NT AUTHORITY\SYSTEM' -LogonType
 Register-ScheduledTask -Action $action -Principal $principal -TaskName "batchappinsights" -Force ;
 Start-ScheduledTask -TaskName "batchappinsights";
 Get-ScheduledTask -TaskName "batchappinsights";
+
+cd ..
