@@ -36,15 +36,14 @@ Try
         {
             Write-Host "Python >= 2.7 was not found in the path."
             choco install -y python2
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
         }
     }
 
-    # Stop on any errors
-    $ErrorActionPreference = "Stop"
-
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
     Write-Host "Current path: $env:Path"
 
+    # Stop on any errors
+    $ErrorActionPreference = "Stop"
     Write-Host "Python version:"
     python --version
     pip install psutil python-dateutil applicationinsights==0.11.7 nvidia-ml-py
