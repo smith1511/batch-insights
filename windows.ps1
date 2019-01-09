@@ -1,6 +1,3 @@
-# Stop on any errors
-$ErrorActionPreference = "Stop"
-
 $wd = "$env:AZ_BATCH_TASK_WORKING_DIR\batchinsights"
 mkdir "$wd"
 cd "$wd"
@@ -27,6 +24,9 @@ Try
         Write-Error "Python >= 2.7 was not found in the path."
         choco install -y python2
     }
+    
+    # Stop on any errors
+    $ErrorActionPreference = "Stop"
 
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
     Write-Host "Current path: $env:Path"
