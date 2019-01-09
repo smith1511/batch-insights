@@ -1,5 +1,3 @@
-Set-PSDebug -Trace 2
-
 
 $wd = "$env:AZ_BATCH_TASK_WORKING_DIR\batchinsights"
 mkdir "$wd"
@@ -16,27 +14,35 @@ Try
     # Source path from reg to ensure the latest
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 
-    $env:PATH
-    dir C:\
-    dir C:\Python27
-
-    $python = ""
-    try {
-        $python = & python.exe -V 2>&1 | %{ "$_" }
-    } catch {
-        Write-Host "Python was not found in the path."
-    }
-
-    if(!$python.StartsWith("Python 2.7"))
+    if ((Test-Path "C:\Python27\python.exe"))
     {
-        Write-Host "Python >= 2.7 was not found in the path."
-        choco install -y python2
+        $paths = ${env:PATH}.ToLower().Split(";")
+        if (!$paths.Contains('c:\python27'))
+        {
+            Write-Host "Adding Python to the path."
+            $env:PATH = "C:\Python27;C:\Python27\Scripts;${env:PATH}"
+        }
     }
-    
+    else
+    {
+        $python = ""
+        try {
+            $python = & python.exe -V 2>&1 | %{ "$_" }
+        } catch {
+            # No python in path
+        }
+
+        if(!$python.StartsWith("Python 2.7"))
+        {
+            Write-Host "Python >= 2.7 was not found in the path."
+            choco install -y python2
+        }
+    }
+
     # Stop on any errors
     $ErrorActionPreference = "Stop"
 
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
     Write-Host "Current path: $env:Path"
 
     Write-Host "Python version:"
