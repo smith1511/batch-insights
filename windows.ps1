@@ -14,7 +14,12 @@ Try
     }
 
     # Source path from reg to ensure the latest
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "User") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+
+    $env:PATH
+    dir C:\
+    dir C:\Python27
+
     $python = ""
     try {
         $python = & python.exe -V 2>&1 | %{ "$_" }
