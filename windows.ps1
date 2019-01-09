@@ -1,3 +1,6 @@
+Set-PSDebug -Trace 2
+
+
 $wd = "$env:AZ_BATCH_TASK_WORKING_DIR\batchinsights"
 mkdir "$wd"
 cd "$wd"
