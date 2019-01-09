@@ -19,12 +19,12 @@ Try
     try {
         $python = & python.exe -V 2>&1 | %{ "$_" }
     } catch {
-        Write-Error "Python was not found in the path."
+        Write-Host "Python was not found in the path."
     }
 
     if(!$python.StartsWith("Python 2.7"))
     {
-        Write-Error "Python >= 2.7 was not found in the path."
+        Write-Host "Python >= 2.7 was not found in the path."
         choco install -y python2
     }
     
