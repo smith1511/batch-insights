@@ -7,8 +7,25 @@ cd "$wd"
 
 Try
 {
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-    choco install -y python2
+    choco -h | Out-Null
+    if ($lastexitcode -ne 0)
+    {
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    }
+
+    $python = ""
+    try {
+        $python = & python.exe -V 2>&1 | %{ "$_" }
+    } catch {
+        Write-Error "Python was not found in the path."
+    }
+
+    if(!$python.StartsWith("Python 2.7"))
+    {
+        Write-Error "Python >= 2.7 was not found in the path."
+        choco install -y python2
+    }
+
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
     Write-Host "Current path: $env:Path"
 
