@@ -13,6 +13,8 @@ Try
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
     }
 
+    # Source path from reg to ensure the latest
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
     $python = ""
     try {
         $python = & python.exe -V 2>&1 | %{ "$_" }
